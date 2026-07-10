@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0A0A0C">
+<title>BarberBook Premium</title>
+
+<!-- PWA -->
+<link rel="manifest" href="/manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="BarberBook">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+<style>
+/* ============================================================
+   BARBERBOOK PREMIUM — CLIENTE — DESIGN TOKENS (mesmo sistema do Admin)
+   ============================================================ */
+:root{
+  --bg:#0A0A0C;
+  --surface:#16161A;
+  --glass:rgba(31,31,36,0.6);
+  --glass-border:rgba(201,162,39,0.16);
+  --gold:#C9A227;
+  --gold-light:#E8CC6E;
+  --gold-deep:#8A6B14;
+  --white:#F5F2EA;
+  --grey:#9B9BA3;
+  --grey-dim:#5C5C63;
+  --danger:#D9584F;
+  --success:#4FAE7A;
+  --info:#5A9BD9;
+  --radius-lg:24px;
+  --radius-md:16px;
+  --radius-sm:10px;
+  --ff-display:'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --ff-body:'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --ff-mono:'JetBrains Mono', monospace;
+  --ease:cubic-bezier(.22,1,.36,1);
+}
+*{box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent;}
+html,body{height:100%;}
+body{
+  font-family:var(--ff-body);
+  background:
+    radial-gradient(1200px 600px at 50% -10%, rgba(201,162,39,0.10), transparent 60%),
+    radial-gradient(800px 500px at 100% 100%, rgba(201,162,39,0.06), transparent 60%),
+    var(--bg);
+  color:var(--white); min-height:100vh; overflow-x:hidden; -webkit-font-smoothing:antialiased;
+}
+::-webkit-scrollbar{width:6px; height:6px;}
+::-webkit-scrollbar-thumb{background:rgba(201,162,39,0.3); border-radius:4px;}
+button{font-family:inherit; border:none; background:none; cursor:pointer; color:inherit;}
+input,select,textarea{font-family:inherit; color:inherit;}
+:focus-visible{outline:2px solid var(--gold-light); outline-offset:2px;}
+@media (prefers-reduced-motion: reduce){ *{animation-duration:0.01ms !important; transition-duration:0.01ms !important;} }
+.hidden{display:none !important;}
+
+/* ---------- App shell (mobile-first, centralizado no desktop) ---------- */
+.app-frame{max-width:460px; margin:0 auto; min-height:100vh; position:relative; padding-bottom:96px;}
+.topbar{display:flex; align-items:center; justify-content:space-between; padding:22px 18px 10px;}
+.topbar .brand{display:flex; align-items:center; gap:10px;}
+.topbar .mark{width:32px; height:32px; border-radius:10px; background:linear-gradient(145deg, rgba(201,162,39,0.25), rgba(201,162,39,0.03)); border:1px solid var(--glass-border); display:flex; align-items:center; justify-content:center; font-family:var(--ff-display); font-weight:800; color:var(--gold-light); font-size:14px;}
+.topbar .txt{font-family:var(--ff-display); font-weight:800; font-size:14px;}
+.topbar .txt small{display:block; font-size:9px; font-weight:600; color:var(--gold-light); letter-spacing:2px; text-transform:uppercase;}
+.topbar .av{width:34px; height:34px; border-radius:10px; background:linear-gradient(145deg,var(--gold-light),var(--gold-deep)); display:flex; align-items:center; justify-content:center; font-family:var(--ff-display); font-weight:800; color:#1A1400; font-size:13px; cursor:pointer;}
+
+.main{padding:6px 18px 30px;}
+.page-eyebrow{font-size:11px; color:var(--gold-light); letter-spacing:2px; text-transform:uppercase; font-weight:700;}
+.page-title{font-family:var(--ff-display); font-weight:800; font-size:23px; margin-top:4px; margin-bottom:20px;}
+
+/* Bottom nav */
+.bottom-nav{position:fixed; bottom:0; left:0; right:0; z-index:50; padding:0 12px calc(12px + env(safe-area-inset-bottom)); max-width:460px; margin:0 auto;}
+.bottom-nav-inner{display:flex; justify-content:space-around; align-items:center; background:rgba(22,22,26,0.9); backdrop-filter:blur(24px) saturate(160%); -webkit-backdrop-filter:blur(24px) saturate(160%); border:1px solid var(--glass-border); border-radius:20px; padding:8px 2px; box-shadow:0 12px 40px -12px rgba(0,0,0,0.6);}
+.bn-item{display:flex; flex-direction:column; align-items:center; gap:3px; padding:8px 14px; border-radius:12px; color:var(--grey-dim); flex:1;}
+.bn-item svg{width:19px; height:19px;}
+.bn-item span{font-size:9.5px; font-weight:700;}
+.bn-item.active{color:var(--gold-light); background:rgba(201,162,39,0.10);}
+
+/* ---------- Shared components ---------- */
+.glass{background:var(--glass); backdrop-filter:blur(20px) saturate(140%); -webkit-backdrop-filter:blur(20px) saturate(140%); border:1px solid var(--glass-border); border-radius:var(--radius-lg);}
+.card{padding:20px;}
+.gold-text{background:linear-gradient(135deg, var(--gold-light), var(--gold) 60%, var(--gold-deep)); -webkit-background-clip:text; background-clip:text; color:transparent;}
+
+.btn{display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:13px 18px; border-radius:var(--radius-sm); font-family:var(--ff-display); font-weight:700; font-size:13.5px; transition:transform .16s var(--ease), opacity .16s var(--ease); white-space:nowrap;}
+.btn:active{transform:scale(0.97);}
+.btn-primary{background:linear-gradient(135deg, var(--gold-light), var(--gold)); color:#1A1400; box-shadow:0 8px 20px -8px rgba(201,162,39,0.5);}
+.btn-primary:disabled{opacity:0.35; pointer-events:none; box-shadow:none;}
+.btn-ghost{background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.10); color:var(--white);}
+.btn-danger-outline{background:rgba(217,88,79,0.08); border:1px solid rgba(217,88,79,0.3); color:var(--danger);}
+.btn-google{background:#fff; color:#1A1400;}
+.btn-block{width:100%;}
+
+.field{display:flex; flex-direction:column; gap:8px; margin-bottom:16px;}
+.field label{font-size:12px; color:var(--grey); font-weight:600; letter-spacing:0.3px; text-transform:uppercase;}
+.field input{background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.10); border-radius:var(--radius-sm); padding:13px 15px; font-size:14.5px; width:100%;}
+.field input:focus{border-color:var(--gold); background:rgba(201,162,39,0.06);}
+.field input:disabled{opacity:0.55;}
+.error-msg{color:var(--danger); font-size:13px; margin:-8px 0 12px; display:none;}
+.error-msg.show{display:block;}
+
+/* Auth screen */
+#screen-auth{min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px;}
+.auth-box{width:100%; max-width:380px;}
+.auth-eyebrow{font-size:12px; letter-spacing:3px; color:var(--gold); text-transform:uppercase; font-weight:600; margin-bottom:10px; text-align:center;}
+.auth-title{font-family:var(--ff-display); font-size:24px; font-weight:800; text-align:center; margin-bottom:28px;}
+.tab-switch{display:flex; background:rgba(255,255,255,0.04); border-radius:var(--radius-sm); padding:4px; margin-bottom:22px;}
+.tab-switch button{flex:1; padding:10px; border-radius:8px; font-family:var(--ff-display); font-weight:600; font-size:13px; color:var(--grey);}
+.tab-switch button.active{background:var(--gold); color:#1A1400;}
+.auth-note{font-size:12px; color:var(--grey-dim); text-align:center; margin-top:18px; line-height:1.5;}
+.auth-divider{display:flex; align-items:center; gap:10px; margin:18px 0; color:var(--grey-dim); font-size:11px; text-transform:uppercase; letter-spacing:1px;}
+.auth-divider::before, .auth-divider::after{content:''; flex:1; height:1px; background:rgba(255,255,255,0.08);}
+
+/* Booking steps */
+.step-progress{display:flex; gap:6px; margin-bottom:20px;}
+.step-progress .seg{flex:1; height:3px; border-radius:3px; background:rgba(255,255,255,0.08);}
+.step-progress .seg.done{background:var(--gold);}
+.step-progress .seg.active{background:var(--gold-light);}
+
+.svc-card, .barber-card{display:flex; align-items:center; gap:14px; padding:16px; margin-bottom:10px; cursor:pointer; transition:border-color .18s var(--ease);}
+.svc-card.selected, .barber-card.selected{border-color:var(--gold);}
+.svc-icon{width:42px; height:42px; border-radius:12px; background:linear-gradient(145deg, rgba(201,162,39,0.22), rgba(201,162,39,0.05)); display:flex; align-items:center; justify-content:center; flex-shrink:0; color:var(--gold-light); font-family:var(--ff-display); font-weight:800; font-size:15px;}
+.svc-info{flex:1; min-width:0;}
+.svc-nm{font-family:var(--ff-display); font-weight:700; font-size:14.5px;}
+.svc-sub{font-size:12px; color:var(--grey); margin-top:2px;}
+.svc-price{font-family:var(--ff-mono); font-weight:600; font-size:14px; color:var(--gold-light); white-space:nowrap;}
+.star-rating{font-size:11.5px; color:var(--grey); margin-top:2px;}
+
+.date-scroll{display:flex; gap:9px; overflow-x:auto; padding:2px 2px 14px;}
+.date-chip{flex-shrink:0; width:56px; padding:10px 0; border-radius:14px; text-align:center; border:1px solid rgba(255,255,255,0.10); background:rgba(255,255,255,0.03); cursor:pointer;}
+.date-chip.selected{border-color:var(--gold); background:linear-gradient(145deg, rgba(201,162,39,0.22), rgba(201,162,39,0.05));}
+.date-chip .dow{font-size:9.5px; color:var(--grey); text-transform:uppercase;}
+.date-chip .dnum{font-family:var(--ff-display); font-weight:800; font-size:16px; margin-top:2px;}
+.date-chip.selected .dow, .date-chip.selected .dnum{color:var(--gold-light);}
+
+.time-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:20px;}
+.time-slot{padding:11px 0; text-align:center; border-radius:12px; border:1px solid rgba(255,255,255,0.10); background:rgba(255,255,255,0.03); font-family:var(--ff-mono); font-size:13px; cursor:pointer;}
+.time-slot.selected{border-color:var(--gold); background:linear-gradient(145deg, rgba(201,162,39,0.22), rgba(201,162,39,0.05)); color:var(--gold-light); font-weight:600;}
+.time-slot.taken{opacity:0.3; text-decoration:line-through; pointer-events:none;}
+
+.step-actions{display:flex; gap:10px; margin-top:8px;}
+.step-actions .btn{flex:1;}
+
+/* Ticket stub — elemento de assinatura visual */
+.ticket{position:relative; background:var(--surface); border:1px solid var(--glass-border); border-radius:20px; overflow:hidden; margin-bottom:14px;}
+.ticket-top{padding:18px 18px 14px;}
+.ticket-eyebrow{font-size:10px; color:var(--gold-light); letter-spacing:1.5px; text-transform:uppercase; font-weight:700; margin-bottom:6px;}
+.ticket-svc{font-family:var(--ff-display); font-weight:800; font-size:16px;}
+.ticket-barber{font-size:12.5px; color:var(--grey); margin-top:2px;}
+.ticket-divider{position:relative; height:0; border-top:1.5px dashed rgba(255,255,255,0.15); margin:0 18px;}
+.ticket-divider::before, .ticket-divider::after{content:''; position:absolute; top:-9px; width:18px; height:18px; border-radius:50%; background:var(--bg);}
+.ticket-divider::before{left:-27px;}
+.ticket-divider::after{right:-27px;}
+.ticket-bottom{padding:14px 18px 18px; display:flex; align-items:center; justify-content:space-between;}
+.ticket-meta{font-family:var(--ff-mono); font-size:12.5px; color:var(--grey);}
+.ticket-meta b{color:var(--white); font-weight:600;}
+.ticket-actions{display:flex; gap:8px;}
+
+.badge{display:inline-flex; align-items:center; gap:5px; padding:4px 9px; border-radius:20px; font-size:10.5px; font-weight:700; letter-spacing:0.3px; text-transform:uppercase;}
+.badge .dot{width:5px; height:5px; border-radius:50%; background:currentColor;}
+.badge.agendado{background:rgba(90,155,217,0.14); color:var(--info);}
+.badge.concluido{background:rgba(79,174,122,0.14); color:var(--success);}
+.badge.cancelado{background:rgba(217,88,79,0.14); color:var(--danger);}
+
+.pill-tabs{display:flex; gap:8px; margin-bottom:18px; flex-wrap:wrap;}
+.pill-tabs button{padding:9px 16px; border-radius:12px; font-family:var(--ff-display); font-weight:700; font-size:12.5px; color:var(--grey); background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08);}
+.pill-tabs button.active{background:var(--gold); color:#1A1400; border-color:var(--gold);}
+
+.empty-state{display:flex; flex-direction:column; align-items:center; text-align:center; padding:50px 20px; color:var(--grey);}
+.empty-state svg{width:38px; height:38px; margin-bottom:12px; opacity:0.5;}
+.empty-state p{font-size:13.5px; max-width:260px;}
+
+/* Portfólio */
+.portfolio-group{margin-bottom:24px;}
+.portfolio-group-head{display:flex; align-items:center; gap:10px; margin-bottom:12px;}
+.portfolio-group-head .avatar-sm{width:32px; height:32px; border-radius:10px; background:linear-gradient(145deg, rgba(201,162,39,0.3), rgba(201,162,39,0.05)); display:inline-flex; align-items:center; justify-content:center; font-family:var(--ff-display); font-weight:800; font-size:12px; color:var(--gold-light);}
+.portfolio-group-head .nm{font-family:var(--ff-display); font-weight:700; font-size:14px;}
+.portfolio-group-head .sub{font-size:11.5px; color:var(--grey);}
+.portfolio-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:8px;}
+.portfolio-grid img{width:100%; aspect-ratio:1; object-fit:cover; border-radius:12px; border:1px solid var(--glass-border); cursor:pointer; background:var(--surface);}
+.lightbox{position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:150; display:none; align-items:center; justify-content:center; padding:24px;}
+.lightbox.show{display:flex;}
+.lightbox img{max-width:100%; max-height:85vh; border-radius:16px;}
+.lightbox-close{position:absolute; top:20px; right:20px; width:38px; height:38px; border-radius:50%; background:rgba(255,255,255,0.1); display:flex; align-items:center; justify-content:center; color:var(--white);}
+
+/* Sheets / Modal */
+.sheet-overlay{position:fixed; inset:0; background:rgba(0,0,0,0.6); backdrop-filter:blur(4px); z-index:90; display:none; align-items:center; justify-content:center; padding:20px;}
+.sheet-overlay.show{display:flex;}
+.sheet{width:100%; max-width:420px; background:var(--surface); border-radius:24px; border:1px solid var(--glass-border); padding:24px; max-height:88vh; overflow-y:auto;}
+.sheet-title{font-family:var(--ff-display); font-weight:800; font-size:17px; margin-bottom:4px;}
+.sheet-sub{font-size:12.5px; color:var(--grey); margin-bottom:18px;}
+.sheet-actions{display:flex; gap:10px; margin-top:6px;}
+.sheet-actions .btn{flex:1;}
+
+.toast{position:fixed; bottom:100px; left:50%; transform:translateX(-50%) translateY(20px); background:var(--surface); border:1px solid var(--glass-border); border-radius:14px; padding:13px 20px; font-size:13px; font-weight:600; z-index:200; opacity:0; pointer-events:none; transition:all .3s var(--ease); max-width:90%; text-align:center; box-shadow:0 12px 30px -8px rgba(0,0,0,0.5);}
+.toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+.toast.success{border-color:rgba(79,174,122,0.4); color:var(--success);}
+.toast.error{border-color:rgba(217,88,79,0.4); color:var(--danger);}
+
+.spinner{width:18px; height:18px; border:2.5px solid rgba(255,255,255,0.15); border-top-color:var(--gold-light); border-radius:50%; animation:spin .7s linear infinite; margin:0 auto;}
+.spinner.on-gold{border:2.5px solid rgba(0,0,0,0.2); border-top-color:#1A1400;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.full-loader{min-height:100vh; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:16px;}
+
+.view{animation:fadeUp .35s var(--ease);}
+@keyframes fadeUp{from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);}}
+</style>
+</head>
+<body>
+
+<!-- ============ LOADER ============ -->
+<div class="full-loader" id="screen-loading">
+  <div class="spinner"></div>
+</div>
+
+<!-- ============ AUTH ============ -->
+<div id="screen-auth" class="hidden">
+  <div class="auth-box glass card">
+    <div class="auth-eyebrow">Agende seu horário</div>
+    <div class="auth-title gold-text">BarberBook Premium</div>
+
+    <div class="tab-switch">
+      <button id="tabLogin" class="active" onclick="switchAuthTab('login')">Entrar</button>
+      <button id="tabCadastro" onclick="switchAuthTab('cadastro')">Criar conta</button>
+    </div>
+
+    <div id="formLogin">
+      <div class="field"><label>E-mail</label><input type="email" id="loginEmail" placeholder="voce@email.com"></div>
+      <div class="field"><label>Senha</label><input type="password" id="loginSenha" placeholder="••••••••"></div>
+      <div class="error-msg" id="loginError"></div>
+      <button class="btn btn-primary btn-block" id="btnLogin" onclick="fazerLogin()">Entrar</button>
+      <div class="auth-divider">ou</div>
+      <button class="btn btn-google btn-block" onclick="loginGoogle()">
+        <svg width="16" height="16" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.4 29.3 35 24 35c-6.1 0-11-4.9-11-11s4.9-11 11-11c2.8 0 5.3 1 7.3 2.7l5.7-5.7C33.4 6.5 28.9 4.5 24 4.5 12.8 4.5 3.5 13.8 3.5 25S12.8 45.5 24 45.5 44.5 36.2 44.5 25c0-1.5-.2-3-.4-4.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 15.9 18.9 13 24 13c2.8 0 5.3 1 7.3 2.7l5.7-5.7C33.4 6.5 28.9 4.5 24 4.5c-7.5 0-14 4.2-17.3 10.2z"/><path fill="#4CAF50" d="M24 45.5c5.2 0 9.9-1.8 13.5-4.9l-6.2-5.3c-2 1.5-4.6 2.4-7.3 2.4-5.3 0-9.7-3.6-11.3-8.4l-6.6 5.1C9.9 41.3 16.4 45.5 24 45.5z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.2 4.2-4.1 5.6l6.2 5.3C40.8 36.4 44.5 31.1 44.5 25c0-1.5-.2-3-.4-4.5z"/></svg>
+        Continuar com Google
+      </button>
+      <div class="auth-note">Bem-vindo de volta! Entre para ver seus agendamentos.</div>
+    </div>
+
+    <div id="formCadastro" class="hidden">
+      <div class="field"><label>Nome</label><input type="text" id="cadNome" placeholder="Seu nome"></div>
+      <div class="field"><label>E-mail</label><input type="email" id="cadEmail" placeholder="voce@email.com"></div>
+      <div class="field"><label>Telefone</label><input type="tel" id="cadTelefone" placeholder="(00) 00000-0000"></div>
+      <div class="field"><label>Senha</label><input type="password" id="cadSenha" placeholder="Mínimo 6 caracteres"></div>
+      <div class="error-msg" id="cadError"></div>
+      <button class="btn btn-primary btn-block" id="btnCadastro" onclick="fazerCadastro()">Criar conta</button>
+      <div class="auth-divider">ou</div>
+      <button class="btn btn-google btn-block" onclick="loginGoogle()">
+        <svg width="16" height="16" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.4 29.3 35 24 35c-6.1 0-11-4.9-11-11s4.9-11 11-11c2.8 0 5.3 1 7.3 2.7l5.7-5.7C33.4 6.5 28.9 4.5 24 4.5 12.8 4.5 3.5 13.8 3.5 25S12.8 45.5 24 45.5 44.5 36.2 44.5 25c0-1.5-.2-3-.4-4.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 15.9 18.9 13 24 13c2.8 0 5.3 1 7.3 2.7l5.7-5.7C33.4 6.5 28.9 4.5 24 4.5c-7.5 0-14 4.2-17.3 10.2z"/><path fill="#4CAF50" d="M24 45.5c5.2 0 9.9-1.8 13.5-4.9l-6.2-5.3c-2 1.5-4.6 2.4-7.3 2.4-5.3 0-9.7-3.6-11.3-8.4l-6.6 5.1C9.9 41.3 16.4 45.5 24 45.5z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.2 4.2-4.1 5.6l6.2 5.3C40.8 36.4 44.5 31.1 44.5 25c0-1.5-.2-3-.4-4.5z"/></svg>
+        Continuar com Google
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ APP ============ -->
+<div id="screen-app" class="hidden">
+  <div class="app-frame">
+    <div class="topbar">
+      <div class="brand">
+        <div class="mark">B</div>
+        <div class="txt">BarberBook<small>Premium</small></div>
+      </div>
+      <div class="av" id="topAvatar" onclick="irPara('perfil')">?</div>
+    </div>
+
+    <div class="main">
+
+      <!-- ---------- INÍCIO / AGENDAR ---------- -->
+      <div id="view-inicio" class="view">
+        <div class="page-eyebrow">Novo agendamento</div>
+        <div class="page-title">Reservar horário</div>
+
+        <div class="step-progress">
+          <div class="seg" id="seg1"></div><div class="seg" id="seg2"></div>
+          <div class="seg" id="seg3"></div><div class="seg" id="seg4"></div>
+        </div>
+
+        <!-- Passo 1: Serviço -->
+        <div id="stepServico">
+          <div id="listaServicos"></div>
+        </div>
+
+        <!-- Passo 2: Barbeiro -->
+        <div id="stepBarbeiro" class="hidden">
+          <div id="listaBarbeiros"></div>
+          <div class="step-actions">
+            <button class="btn btn-ghost" onclick="voltarStep(1)">Voltar</button>
+          </div>
+        </div>
+
+        <!-- Passo 3: Data/Horário -->
+        <div id="stepData" class="hidden">
+          <div class="date-scroll" id="dateScroll"></div>
+          <div class="time-grid" id="timeGrid"></div>
+          <div class="step-actions">
+            <button class="btn btn-ghost" onclick="voltarStep(2)">Voltar</button>
+            <button class="btn btn-primary" id="btnIrConfirmar" onclick="irStep(4)" disabled>Continuar</button>
+          </div>
+        </div>
+
+        <!-- Passo 4: Confirmar -->
+        <div id="stepConfirmar" class="hidden">
+          <div class="ticket glass">
+            <div class="ticket-top">
+              <div class="ticket-eyebrow">Resumo do agendamento</div>
+              <div class="ticket-svc" id="resSvc">—</div>
+              <div class="ticket-barber" id="resBarber">—</div>
+            </div>
+            <div class="ticket-divider"></div>
+            <div class="ticket-bottom">
+              <div class="ticket-meta" id="resDataHora">—</div>
+              <div class="ticket-meta"><b id="resValor">—</b></div>
+            </div>
+          </div>
+          <div class="step-actions">
+            <button class="btn btn-ghost" onclick="voltarStep(3)">Voltar</button>
+            <button class="btn btn-primary" id="btnConfirmarAgendamento" onclick="confirmarAgendamento()">Confirmar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ---------- MEUS AGENDAMENTOS ---------- -->
+      <div id="view-agendamentos" class="view hidden">
+        <div class="page-eyebrow">Seus horários</div>
+        <div class="page-title">Meus Agendamentos</div>
+        <div class="pill-tabs">
+          <button id="tabProximos" class="active" onclick="switchAgendaTab('proximos')">Próximos</button>
+          <button id="tabHistorico" onclick="switchAgendaTab('historico')">Histórico</button>
+        </div>
+        <div id="listaAgendamentos"></div>
+        <div class="empty-state hidden" id="agendamentosEmpty">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>
+          <p>Nenhum agendamento por aqui ainda. Toque em "Início" para reservar seu horário.</p>
+        </div>
+      </div>
+
+      <!-- ---------- PORTFÓLIO ---------- -->
+      <div id="view-portfolio" class="view hidden">
+        <div class="page-eyebrow">Inspiração</div>
+        <div class="page-title">Portfólio</div>
+        <div id="listaPortfolio"></div>
+        <div class="empty-state hidden" id="portfolioEmpty">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.8"/><path d="M21 15l-5-5L5 21"/></svg>
+          <p>Ainda não há fotos no portfólio. Em breve os barbeiros vão adicionar trabalhos aqui.</p>
+        </div>
+      </div>
+
+      <!-- ---------- PERFIL ---------- -->
+      <div id="view-perfil" class="view hidden">
+        <div class="page-eyebrow">Sua conta</div>
+        <div class="page-title">Perfil</div>
+        <div class="glass card" style="margin-bottom:16px;">
+          <div class="field"><label>Nome</label><input type="text" id="perfilNome"></div>
+          <div class="field"><label>E-mail</label><input type="email" id="perfilEmail" disabled></div>
+          <div class="field"><label>Telefone</label><input type="tel" id="perfilTelefone" placeholder="(00) 00000-0000"></div>
+          <button class="btn btn-primary btn-block" id="btnSalvarPerfil" onclick="salvarPerfil()">Salvar alterações</button>
+        </div>
+        <button class="btn btn-danger-outline btn-block" onclick="fazerLogout()">Sair da conta</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Bottom nav -->
+  <div class="bottom-nav">
+    <div class="bottom-nav-inner">
+      <button class="bn-item active" id="bn-inicio" onclick="irPara('inicio')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 4v16m8-8H4"/></svg>
+        <span>Início</span>
+      </button>
+      <button class="bn-item" id="bn-agendamentos" onclick="irPara('agendamentos')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>
+        <span>Agenda</span>
+      </button>
+      <button class="bn-item" id="bn-portfolio" onclick="irPara('portfolio')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.8"/><path d="M21 15l-5-5L5 21"/></svg>
+        <span>Portfólio</span>
+      </button>
+      <button class="bn-item" id="bn-perfil" onclick="irPara('perfil')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>
+        <span>Perfil</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Sheet: cancelar -->
+<div class="sheet-overlay" id="sheetCancelar" onclick="if(event.target===this) fecharSheets()">
+  <div class="sheet">
+    <div class="sheet-title">Cancelar agendamento?</div>
+    <div class="sheet-sub">Essa ação não pode ser desfeita. Se precisar, você pode reservar um novo horário depois.</div>
+    <div class="sheet-actions">
+      <button class="btn btn-ghost" onclick="fecharSheets()">Voltar</button>
+      <button class="btn btn-danger-outline" id="btnConfirmarCancelar" onclick="executarCancelamento()">Cancelar horário</button>
+    </div>
+  </div>
+</div>
+
+<!-- Sheet: reagendar -->
+<div class="sheet-overlay" id="sheetReagendar" onclick="if(event.target===this) fecharSheets()">
+  <div class="sheet">
+    <div class="sheet-title">Reagendar</div>
+    <div class="sheet-sub" id="reagendarSub">Escolha a nova data e horário.</div>
+    <div class="date-scroll" id="reDateScroll"></div>
+    <div class="time-grid" id="reTimeGrid"></div>
+    <div class="sheet-actions">
+      <button class="btn btn-ghost" onclick="fecharSheets()">Cancelar</button>
+      <button class="btn btn-primary" id="btnSalvarReagendamento" onclick="salvarReagendamento()">Salvar nova data</button>
+    </div>
+  </div>
+</div>
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox" onclick="fecharLightbox()">
+  <div class="lightbox-close" onclick="fecharLightbox()">✕</div>
+  <img id="lightboxImg" src="" alt="Foto do portfólio">
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ---------- 1. FIREBASE ----------
+const firebaseConfig = {
+  apiKey: "AIzaSyDoEX1O6MAeCCmSczBbO2yfgNfuiIuOa9s",
+  authDomain: "barberbook-premium-d9fa6.firebaseapp.com",
+  projectId: "barberbook-premium-d9fa6",
+  storageBucket: "barberbook-premium-d9fa6.firebasestorage.app",
+  messagingSenderId: "32349707607",
+  appId: "1:32349707607:web:19ed8f3dd433742bfff212"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+// ---------- 2. ESTADO ----------
+let usuarioAtual = null;
+let servicosCache = [], barbeirosCache = [], agendamentosCache = [];
+let unsubscribers = [];
+const HORA_INICIO = 9, HORA_FIM = 19, INTERVALO_MIN = 30;
+
+let novoAg = { servico:null, barbeiro:null, dataKey:null, horario:null };
+let reagendandoId = null, reagendandoBarbeiroId = null, reDataSel = null, reHoraSel = null;
+let cancelandoId = null;
+let agendaTabAtual = 'proximos';
+
+// ---------- 3. HELPERS ----------
+function moeda(v){ return 'R$ ' + Number(v||0).toFixed(2).replace('.',','); }
+function chaveData(d){ return d.toISOString().slice(0,10); }
+function fmtDataCurta(key){
+  if(!key) return '—';
+  const [y,m,d] = key.split('-');
+  return `${d}/${m}`;
+}
+function iniciais(nome){
+  if(!nome) return '?';
+  return nome.trim().split(/\s+/).slice(0,2).map(p=>p[0]).join('').toUpperCase();
+}
+function labelStatus(s){ return {agendado:'Agendado', concluido:'Concluído', cancelado:'Cancelado'}[s] || s; }
+function toast(msg, tipo='success'){
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.className = 'toast show ' + tipo;
+  setTimeout(()=> el.classList.remove('show'), 2600);
+}
+function setLoading(btn, loading, label){
+  if(loading){ btn.dataset.label = btn.innerHTML; btn.innerHTML = '<div class="spinner on-gold"></div>'; btn.disabled = true; }
+  else { btn.innerHTML = label || btn.dataset.label || btn.innerHTML; btn.disabled = false; }
+}
+function proximosDias(qtd){
+  const dias = [];
+  const hoje = new Date();
+  for(let i=0;i<qtd;i++){
+    const d = new Date(hoje); d.setDate(hoje.getDate()+i);
+    dias.push(d);
+  }
+  return dias;
+}
+function gerarSlots(){
+  const slots = [];
+  for(let h=HORA_INICIO; h<HORA_FIM; h++){
+    for(let m=0; m<60; m+=INTERVALO_MIN){
+      slots.push(String(h).padStart(2,'0')+':'+String(m).padStart(2,'0'));
+    }
+  }
+  return slots;
+}
+const SLOTS = gerarSlots();
+
+// ---------- 4. AUTENTICAÇÃO ----------
+function switchAuthTab(tab){
+  const isLogin = tab === 'login';
+  document.getElementById('tabLogin').classList.toggle('active', isLogin);
+  document.getElementById('tabCadastro').classList.toggle('active', !isLogin);
+  document.getElementById('formLogin').classList.toggle('hidden', !isLogin);
+  document.getElementById('formCadastro').classList.toggle('hidden', isLogin);
+}
+function traduzErroAuth(code){
+  const map = {
+    'auth/invalid-email':'E-mail inválido.', 'auth/user-not-found':'Usuário não encontrado.',
+    'auth/wrong-password':'Senha incorreta.', 'auth/invalid-credential':'E-mail ou senha incorretos.',
+    'auth/email-already-in-use':'Este e-mail já está cadastrado.', 'auth/weak-password':'Senha muito fraca.',
+    'auth/network-request-failed':'Falha de conexão.', 'auth/popup-closed-by-user':'Login cancelado.'
+  };
+  return map[code] || 'Ocorreu um erro. Tente novamente.';
+}
+async function fazerLogin(){
+  const email = document.getElementById('loginEmail').value.trim();
+  const senha = document.getElementById('loginSenha').value;
+  const errEl = document.getElementById('loginError'); errEl.classList.remove('show');
+  if(!email || !senha){ errEl.textContent='Preencha e-mail e senha.'; errEl.classList.add('show'); return; }
+  const btn = document.getElementById('btnLogin'); setLoading(btn, true);
+  try{ await auth.signInWithEmailAndPassword(email, senha); }
+  catch(e){ errEl.textContent = traduzErroAuth(e.code); errEl.classList.add('show'); }
+  finally{ setLoading(btn, false, 'Entrar'); }
+}
+async function fazerCadastro(){
+  const nome = document.getElementById('cadNome').value.trim();
+  const email = document.getElementById('cadEmail').value.trim();
+  const telefone = document.getElementById('cadTelefone').value.trim();
+  const senha = document.getElementById('cadSenha').value;
+  const errEl = document.getElementById('cadError'); errEl.classList.remove('show');
+  if(!nome || !email || !senha){ errEl.textContent='Preencha nome, e-mail e senha.'; errEl.classList.add('show'); return; }
+  if(senha.length < 6){ errEl.textContent='Senha precisa ter no mínimo 6 caracteres.'; errEl.classList.add('show'); return; }
+  const btn = document.getElementById('btnCadastro'); setLoading(btn, true);
+  try{
+    const cred = await auth.createUserWithEmailAndPassword(email, senha);
+    await db.collection('usuarios').doc(cred.user.uid).set({
+      nome, email, telefone, criadoEm: firebase.firestore.FieldValue.serverTimestamp()
+    });
+  }catch(e){ errEl.textContent = traduzErroAuth(e.code); errEl.classList.add('show'); }
+  finally{ setLoading(btn, false, 'Criar conta'); }
+}
+async function loginGoogle(){
+  try{
+    const provider = new firebase.auth.GoogleAuthProvider();
+    const cred = await auth.signInWithPopup(provider);
+    const snap = await db.collection('usuarios').doc(cred.user.uid).get();
+    if(!snap.exists){
+      await db.collection('usuarios').doc(cred.user.uid).set({
+        nome: cred.user.displayName || 'Cliente', email: cred.user.email || '', telefone: '',
+        criadoEm: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    }
+  }catch(e){ toast(traduzErroAuth(e.code), 'error'); }
+}
+function fazerLogout(){ unsubscribers.forEach(u=>u()); unsubscribers=[]; auth.signOut(); }
+
+auth.onAuthStateChanged(async (user)=>{
+  document.getElementById('screen-loading').classList.add('hidden');
+  if(!user){
+    usuarioAtual = null;
+    document.getElementById('screen-app').classList.add('hidden');
+    document.getElementById('screen-auth').classList.remove('hidden');
+    return;
+  }
+  let snap = await db.collection('usuarios').doc(user.uid).get();
+  if(!snap.exists){
+    await db.collection('usuarios').doc(user.uid).set({
+      nome: user.displayName || 'Cliente', email: user.email || '', telefone: '',
+      criadoEm: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    snap = await db.collection('usuarios').doc(user.uid).get();
+  }
+  usuarioAtual = { uid: user.uid, ...snap.data() };
+  document.getElementById('topAvatar').textContent = iniciais(usuarioAtual.nome);
+  document.getElementById('screen-auth').classList.add('hidden');
+  document.getElementById('screen-app').classList.remove('hidden');
+  iniciarListeners();
+  preencherPerfil();
+  irPara('inicio');
+});
+
+// ---------- 5. LISTENERS FIRESTORE ----------
+function iniciarListeners(){
+  unsubscribers.push(db.collection('servicos').onSnapshot(snap=>{
+    servicosCache = snap.docs.map(d=>({id:d.id, ...d.data()}));
+    renderServicos();
+  }));
+  unsubscribers.push(db.collection('barbeiros').onSnapshot(snap=>{
+    barbeirosCache = snap.docs.map(d=>({id:d.id, ...d.data()}));
+    renderBarbeiros();
+    renderPortfolio();
+  }));
+  unsubscribers.push(db.collection('agendamentos').where('clienteId','==', usuarioAtual.uid).onSnapshot(snap=>{
+    agendamentosCache = snap.docs.map(d=>({id:d.id, ...d.data()}));
+    renderAgendamentos();
+    if(document.getElementById('stepData') && !document.getElementById('stepData').classList.contains('hidden')) renderTimeGrid();
+  }));
+}
+
+// ---------- 6. NAVEGAÇÃO ----------
+function irPara(tela){
+  ['inicio','agendamentos','portfolio','perfil'].forEach(t=>{
+    document.getElementById('view-'+t).classList.toggle('hidden', t!==tela);
+    document.getElementById('bn-'+t).classList.toggle('active', t===tela);
+  });
+  if(tela==='inicio') reiniciarFluxoAgendamento();
+}
+
+// ---------- 7. FLUXO DE AGENDAMENTO ----------
+function reiniciarFluxoAgendamento(){
+  novoAg = { servico:null, barbeiro:null, dataKey:null, horario:null };
+  irStep(1);
+}
+function irStep(n){
+  ['Servico','Barbeiro','Data','Confirmar'].forEach((nome,i)=>{
+    document.getElementById('step'+nome).classList.toggle('hidden', i !== n-1);
+  });
+  for(let i=1;i<=4;i++){
+    const seg = document.getElementById('seg'+i);
+    seg.classList.toggle('done', i<n);
+    seg.classList.toggle('active', i===n);
+  }
+  if(n===3){ renderDateScroll(); renderTimeGrid(); }
+  if(n===4){ renderResumo(); }
+}
+function voltarStep(n){ irStep(n); }
+
+function renderServicos(){
+  const el = document.getElementById('listaServicos');
+  if(!servicosCache.length){ el.innerHTML = '<div class="empty-state"><p>Nenhum serviço disponível no momento. Volte mais tarde.</p></div>'; return; }
+  el.innerHTML = servicosCache.map(s=>`
+    <div class="svc-card glass ${novoAg.servico && novoAg.servico.id===s.id ? 'selected':''}" onclick="selecionarServico('${s.id}')">
+      <div class="svc-icon">${(s.nome||'?')[0].toUpperCase()}</div>
+      <div class="svc-info">
+        <div class="svc-nm">${s.nome}</div>
+        <div class="svc-sub">${s.duracao||30} min${s.categoria?' · '+s.categoria:''}</div>
+      </div>
+      <div class="svc-price">${moeda(s.preco)}</div>
+    </div>`).join('');
+}
+function selecionarServico(id){
+  const s = servicosCache.find(x=>x.id===id); if(!s) return;
+  novoAg.servico = s;
+  renderServicos();
+  irStep(2);
+}
+function renderBarbeiros(){
+  const el = document.getElementById('listaBarbeiros');
+  if(!barbeirosCache.length){ el.innerHTML = '<div class="empty-state"><p>Nenhum barbeiro cadastrado no momento.</p></div>'; return; }
+  el.innerHTML = barbeirosCache.map(b=>`
+    <div class="barber-card glass ${novoAg.barbeiro && novoAg.barbeiro.id===b.id ? 'selected':''}" onclick="selecionarBarbeiro('${b.id}')">
+      <div class="svc-icon">${iniciais(b.nome)}</div>
+      <div class="svc-info">
+        <div class="svc-nm">${b.nome}</div>
+        <div class="star-rating">${b.especialidade||'Barbeiro'} · ★ ${Number(b.avaliacao||5).toFixed(1)}</div>
+      </div>
+    </div>`).join('');
+}
+function selecionarBarbeiro(id){
+  const b = barbeirosCache.find(x=>x.id===id); if(!b) return;
+  novoAg.barbeiro = b;
+  renderBarbeiros();
+  irStep(3);
+}
+function renderDateScroll(){
+  const el = document.getElementById('dateScroll');
+  const dias = proximosDias(14);
+  if(!novoAg.dataKey) novoAg.dataKey = chaveData(dias[0]);
+  const dow = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+  el.innerHTML = dias.map(d=>{
+    const key = chaveData(d);
+    return `<div class="date-chip ${key===novoAg.dataKey?'selected':''}" onclick="selecionarData('${key}')">
+      <div class="dow">${dow[d.getDay()]}</div><div class="dnum">${d.getDate()}</div>
+    </div>`;
+  }).join('');
+}
+function selecionarData(key){
+  novoAg.dataKey = key; novoAg.horario = null;
+  document.getElementById('btnIrConfirmar').disabled = true;
+  renderDateScroll(); renderTimeGrid();
+}
+function renderTimeGrid(){
+  const el = document.getElementById('timeGrid');
+  if(!novoAg.barbeiro || !novoAg.dataKey){ el.innerHTML=''; return; }
+  const ocupados = agendamentosCache
+    .filter(a=>a.barbeiroId===novoAg.barbeiro.id && a.dataKey===novoAg.dataKey && a.status!=='cancelado')
+    .map(a=>a.horario);
+  el.innerHTML = SLOTS.map(h=>{
+    const taken = ocupados.includes(h);
+    const sel = novoAg.horario===h;
+    return `<div class="time-slot ${taken?'taken':''} ${sel?'selected':''}" ${taken?'':`onclick="selecionarHorario('${h}')"`}>${h}</div>`;
+  }).join('');
+}
+function selecionarHorario(h){
+  novoAg.horario = h;
+  document.getElementById('btnIrConfirmar').disabled = false;
+  renderTimeGrid();
+}
+function renderResumo(){
+  document.getElementById('resSvc').textContent = novoAg.servico.nome;
+  document.getElementById('resBarber').textContent = 'com ' + novoAg.barbeiro.nome;
+  document.getElementById('resDataHora').innerHTML = `<b>${fmtDataCurta(novoAg.dataKey)}</b> · ${novoAg.horario}`;
+  document.getElementById('resValor').textContent = moeda(novoAg.servico.preco);
+}
+async function confirmarAgendamento(){
+  const btn = document.getElementById('btnConfirmarAgendamento'); setLoading(btn, true);
+  try{
+    await db.collection('agendamentos').add({
+      clienteId: usuarioAtual.uid,
+      clienteNome: usuarioAtual.nome || '',
+      servicoId: novoAg.servico.id,
+      servicoNome: novoAg.servico.nome,
+      servicoPreco: Number(novoAg.servico.preco || 0),
+      servicoDuracao: Number(novoAg.servico.duracao || 30),
+      barbeiroId: novoAg.barbeiro.id,
+      barbeiroNome: novoAg.barbeiro.nome,
+      dataKey: novoAg.dataKey,
+      horario: novoAg.horario,
+      status: 'agendado',
+      criadoEm: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    toast('Agendamento confirmado!', 'success');
+    irPara('agendamentos');
+  }catch(e){ toast('Erro ao confirmar. Tente novamente.', 'error'); }
+  finally{ setLoading(btn, false, 'Confirmar'); }
+}
+
+// ---------- 8. MEUS AGENDAMENTOS ----------
+function switchAgendaTab(tab){
+  agendaTabAtual = tab;
+  document.getElementById('tabProximos').classList.toggle('active', tab==='proximos');
+  document.getElementById('tabHistorico').classList.toggle('active', tab==='historico');
+  renderAgendamentos();
+}
+function renderAgendamentos(){
+  const hojeKey = chaveData(new Date());
+  let lista = agendamentosCache.slice().sort((a,b)=> (b.dataKey+b.horario).localeCompare(a.dataKey+a.horario));
+  if(agendaTabAtual==='proximos'){
+    lista = lista.filter(a=> a.status==='agendado' && a.dataKey>=hojeKey).sort((a,b)=>(a.dataKey+a.horario).localeCompare(b.dataKey+b.horario));
+  } else {
+    lista = lista.filter(a=> a.status!=='agendado' || a.dataKey<hojeKey);
+  }
+  const el = document.getElementById('listaAgendamentos');
+  document.getElementById('agendamentosEmpty').classList.toggle('hidden', lista.length>0);
+  el.innerHTML = lista.map(a=>`
+    <div class="ticket glass">
+      <div class="ticket-top">
+        <div class="ticket-eyebrow"><span class="badge ${a.status}"><span class="dot"></span>${labelStatus(a.status)}</span></div>
+        <div class="ticket-svc">${a.servicoNome}</div>
+        <div class="ticket-barber">com ${a.barbeiroNome}</div>
+      </div>
+      <div class="ticket-divider"></div>
+      <div class="ticket-bottom">
+        <div class="ticket-meta"><b>${fmtDataCurta(a.dataKey)}</b> · ${a.horario}</div>
+        ${a.status==='agendado' ? `
+        <div class="ticket-actions">
+          <button class="btn btn-ghost" style="padding:8px 12px; font-size:12px;" onclick="abrirReagendar('${a.id}')">Reagendar</button>
+          <button class="btn btn-danger-outline" style="padding:8px 12px; font-size:12px;" onclick="abrirCancelar('${a.id}')">Cancelar</button>
+        </div>` : `<div class="ticket-meta">${moeda(a.servicoPreco)}</div>`}
+      </div>
+    </div>`).join('');
+}
+
+function abrirCancelar(id){ cancelandoId = id; document.getElementById('sheetCancelar').classList.add('show'); }
+async function executarCancelamento(){
+  const btn = document.getElementById('btnConfirmarCancelar'); setLoading(btn, true);
+  try{
+    await db.collection('agendamentos').doc(cancelandoId).update({ status:'cancelado' });
+    toast('Agendamento cancelado.', 'success');
+    fecharSheets();
+  }catch(e){ toast('Erro ao cancelar. Tente novamente.', 'error'); }
+  finally{ setLoading(btn, false, 'Cancelar horário'); }
+}
+
+function abrirReagendar(id){
+  const a = agendamentosCache.find(x=>x.id===id); if(!a) return;
+  reagendandoId = id; reagendandoBarbeiroId = a.barbeiroId;
+  reDataSel = null; reHoraSel = null;
+  document.getElementById('reagendarSub').textContent = `${a.servicoNome} com ${a.barbeiroNome} — escolha a nova data e horário.`;
+  renderReDateScroll(); renderReTimeGrid();
+  document.getElementById('sheetReagendar').classList.add('show');
+}
+function renderReDateScroll(){
+  const el = document.getElementById('reDateScroll');
+  const dias = proximosDias(14);
+  if(!reDataSel) reDataSel = chaveData(dias[0]);
+  const dow = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+  el.innerHTML = dias.map(d=>{
+    const key = chaveData(d);
+    return `<div class="date-chip ${key===reDataSel?'selected':''}" onclick="selecionarReData('${key}')">
+      <div class="dow">${dow[d.getDay()]}</div><div class="dnum">${d.getDate()}</div>
+    </div>`;
+  }).join('');
+}
+function selecionarReData(key){ reDataSel = key; reHoraSel = null; renderReDateScroll(); renderReTimeGrid(); }
+function renderReTimeGrid(){
+  const el = document.getElementById('reTimeGrid');
+  if(!reDataSel){ el.innerHTML=''; return; }
+  const ocupados = agendamentosCache
+    .filter(a=>a.barbeiroId===reagendandoBarbeiroId && a.dataKey===reDataSel && a.status!=='cancelado' && a.id!==reagendandoId)
+    .map(a=>a.horario);
+  el.innerHTML = SLOTS.map(h=>{
+    const taken = ocupados.includes(h);
+    const sel = reHoraSel===h;
+    return `<div class="time-slot ${taken?'taken':''} ${sel?'selected':''}" ${taken?'':`onclick="selecionarReHorario('${h}')"`}>${h}</div>`;
+  }).join('');
+}
+function selecionarReHorario(h){ reHoraSel = h; renderReTimeGrid(); }
+async function salvarReagendamento(){
+  if(!reDataSel || !reHoraSel){ toast('Escolha data e horário.', 'error'); return; }
+  const btn = document.getElementById('btnSalvarReagendamento'); setLoading(btn, true);
+  try{
+    await db.collection('agendamentos').doc(reagendandoId).update({ dataKey: reDataSel, horario: reHoraSel });
+    toast('Agendamento atualizado!', 'success');
+    fecharSheets();
+  }catch(e){ toast('Erro ao reagendar. Tente novamente.', 'error'); }
+  finally{ setLoading(btn, false, 'Salvar nova data'); }
+}
+
+function fecharSheets(){
+  document.getElementById('sheetCancelar').classList.remove('show');
+  document.getElementById('sheetReagendar').classList.remove('show');
+  cancelandoId = null; reagendandoId = null;
+}
+
+// ---------- 9. PORTFÓLIO ----------
+function renderPortfolio(){
+  const comFotos = barbeirosCache.filter(b => Array.isArray(b.fotos) && b.fotos.length>0);
+  const el = document.getElementById('listaPortfolio');
+  document.getElementById('portfolioEmpty').classList.toggle('hidden', comFotos.length>0);
+  el.innerHTML = comFotos.map(b=>`
+    <div class="portfolio-group">
+      <div class="portfolio-group-head">
+        <div class="avatar-sm">${iniciais(b.nome)}</div>
+        <div><div class="nm">${b.nome}</div><div class="sub">${b.especialidade||'Barbeiro'}</div></div>
+      </div>
+      <div class="portfolio-grid">
+        ${b.fotos.map(url=>`<img src="${url}" loading="lazy" onclick="abrirLightbox('${url.replace(/'/g,"%27")}')" onerror="this.style.opacity=0.2">`).join('')}
+      </div>
+    </div>`).join('');
+}
+function abrirLightbox(url){
+  document.getElementById('lightboxImg').src = url;
+  document.getElementById('lightbox').classList.add('show');
+}
+function fecharLightbox(){ document.getElementById('lightbox').classList.remove('show'); }
+
+// ---------- 10. PERFIL ----------
+function preencherPerfil(){
+  document.getElementById('perfilNome').value = usuarioAtual.nome || '';
+  document.getElementById('perfilEmail').value = usuarioAtual.email || '';
+  document.getElementById('perfilTelefone').value = usuarioAtual.telefone || '';
+}
+async function salvarPerfil(){
+  const nome = document.getElementById('perfilNome').value.trim();
+  const telefone = document.getElementById('perfilTelefone').value.trim();
+  if(!nome){ toast('Informe seu nome.', 'error'); return; }
+  const btn = document.getElementById('btnSalvarPerfil'); setLoading(btn, true);
+  try{
+    await db.collection('usuarios').doc(usuarioAtual.uid).update({ nome, telefone });
+    usuarioAtual.nome = nome; usuarioAtual.telefone = telefone;
+    document.getElementById('topAvatar').textContent = iniciais(nome);
+    toast('Perfil atualizado!', 'success');
+  }catch(e){ toast('Erro ao salvar. Tente novamente.', 'error'); }
+  finally{ setLoading(btn, false, 'Salvar alterações'); }
+}
+
+// ---------- PWA: registro do Service Worker ----------
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/service-worker.js').catch(err => {
+      console.warn('Falha ao registrar service worker:', err);
+    });
+  });
+}
+</script>
+</body>
+</html>
