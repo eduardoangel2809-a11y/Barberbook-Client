@@ -1,0 +1,45 @@
+name: Build & Deploy Android APK
+
+on:
+  push:
+    branches: [ "main" ] # Executa toda vez que você der push na main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    # 1. Baixa o código do seu repositório
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    # 2. Configura o Java (necessário para o Gradle do Android)
+    - name: Setup Java JDK
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'zulu'
+        java-version: '17'
+
+    # 3. Configura o Flutter no ambiente
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        channel: 'stable' # Baixa a versão estável mais recente do Flutter
+
+    # 4. Instala os pacotes do pubspec.yaml
+    - name: Install dependencies
+      run: flutter pub get
+
+    # 5. Gera o arquivo APK de produção
+    - name: Build APK
+      run: flutter build apk --release
+
+    # 6. Faz o deploy salvando o APK na nuvem do próprio GitHub Releases
+    - name: Create Release and Upload APK
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: v1.0.${{ github.run_number }}
+        name: Release v1.0.${{ github.run_number }}
+        files: build/app/outputs/flutter-apk/app-release.apk
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
